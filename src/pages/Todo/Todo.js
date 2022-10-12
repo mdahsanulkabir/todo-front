@@ -16,12 +16,18 @@ const Todo = () => {
 
         fetchTodo();
     }, [])
+
+    const handleCompleted = (id) => {
+        console.log("pressed id ", id);
+        const newTodos = todos.filter(todo => todo._id !== id);
+        setTodos(newTodos);
+    }
     return (
         <div>
             <h2>Todo List</h2>
             <div className="todos">
                 {todos && todos.map((todo)=>(
-                    <TodoDetails key={todo._id} todo={todo}/>
+                    <TodoDetails key={todo._id} todo={todo} handleCompleted={handleCompleted}/>
                 ))}
             </div>
         </div>

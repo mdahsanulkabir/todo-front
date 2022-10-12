@@ -7,7 +7,6 @@
 .header {
     background-color: #2a6ed3;
     height: 80px;
-    width: 1200px;
     max-width: 80vw;
     margin-inline: auto;
     display: flex;
