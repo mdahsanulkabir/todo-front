@@ -1,85 +1,119 @@
-import React, { useState } from 'react';
+import { Box, Button, TextField } from "@mui/material";
+import React, { useReducer } from "react";
+import ArrowRightIcon from "@mui/icons-material/ArrowRight";
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
+import dayjs from "dayjs";
+
+//initial state of the form
+const initialValue = {
+  title : "jh",
+  assign : "fbf",
+  description : "hjg",
+  deadline : dayjs(new Date()).$d,  //Default is today
+  error : null
+}
+
+  const reducer = (state, action) => {
+    console.log(state.title, action);
+    switch ( action.type ) {
+      case 'title':        return { ...state, title : action.payload};
+      case 'assign':       return { ...state, assign : action.payload};
+      case 'description':  return { ...state, description : action.payload};
+      case 'deadline':     return { ...state, deadline : action.payload};
+      case 'error':        return { ...state, error : action.payload};
+      case 'reset':        return initialValue;
+      default:             throw new Error(`Unknown action type: ${action.type}`);
+    }
+  }
 
 const TodoForm = () => {
-    const [title, setTitle] = useState("");
-    const [assign, setAssign] = useState("");
-    const [description, setDescription] = useState("");
-    const [deadline, setDeadline] = useState("");
-    const [error, setError] = useState("");
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        const todo = {title, assign, description, deadline}
 
-        const response = await fetch(`http://localhost:5000/api/todos`, 
-        {
-            method: 'POST',
-            body: JSON.stringify(todo),
-            headers: {
-                'Content-Type' : 'application/json'
-            }
-        })
+  const [state, dispatch] = useReducer(reducer, initialValue)
+  console.log(state);
 
-        const json = await response.json();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const todo = state;
 
-        if(!response.ok) {
-            setError(json.error)
-        }
+    const response = await fetch(`http://localhost:5000/api/todos`, {
+      method: "POST",
+      body: JSON.stringify(todo),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    const json = await response.json();
 
-        if(response.ok) {
-            setTitle('');
-            setAssign('');
-            setDeadline('');
-            setDescription('');
-            setError(null);
-            console.log('new todo added', json);
-        }
+    if (!response.ok) {
+      dispatch({ type : 'error', payload : json.error})
     }
-    return (
-        <div>
-            <form className="create" onSubmit={handleSubmit}>
-                <h3>Add a New To-Do</h3>
 
-                <div style={{
-                            display: 'grid',
-                            gridTemplateColumns: '1fr 3fr',
-                            width: '1200px',
-                            maxWidth: '80vw'                         
-                            }}>
-                <label htmlFor="title">Title : </label>
-                <input 
-                    type="text"
-                    onChange={(e) => setTitle(e.target.value)}
-                    value={title}
-                    name="title" />
+    if (response.ok) {
+      dispatch({ type : 'reset'})
+    }
+  };
+  return (
+    <LocalizationProvider dateAdapter={AdapterDayjs}>
+    <div>
+      <form className="create" onSubmit={handleSubmit}>
+        <h3>Add a New To-Do</h3>
 
-                <label htmlFor="assign">Assigned To : </label>
-                <input 
-                    type="text"
-                    onChange={(e) => setAssign(e.target.value)}
-                    value={assign}
-                    name="assign" />
+        <Box
+          sx={{
+            "& .MuiTextField-root": { m: 1, width: "50%" },
+            display: "flex",
+            flexDirection: "column",
+            gap: "20px",
+            justifyContent: "center",
+            alignItems: "center",
+            marginBottom: "10px",
+          }}
+          noValidate
+          autoComplete="off"
+        >
+          <TextField
+            label="Title"
+            placeholder="Type the Title of the task"
+            required
+            onChange={(e) => dispatch({ type : 'title', payload : e.target.value })}
+            // value={state.title.value}
+          />
 
-                <label htmlFor="description">Description : </label>
-                <input 
-                    type="textarea"
-                    onChange={(e) => setDescription(e.target.value)}
-                    value={description}
-                    name="description" />
+          <TextField
+            label="Assigned"
+            placeholder="Name of the person assigned"
+            required
+            onChange={(e) => dispatch({ type : 'assign', payload : e.target.value})}
+            // value={state.assign.value}
+          />
 
-                <label htmlFor="deadline">Deadline : </label>
-                <input 
-                    type="text"
-                    onChange={(e) => setDeadline(e.target.value)}
-                    value={deadline}
-                    name="deadline" />
+          <TextField
+            label="Description"
+            placeholder="Short description of the task"
+            onChange={(e) => dispatch({ type : 'description', payload : e.target.value})}
+            // value={state.description.value}
+          />
+          
+          <DateTimePicker
+            label="Deadline"
+            onChange={(newValue) => dispatch({ type : 'deadline', payload : newValue})}
+            renderInput={(params) => <TextField {...params} />}
+            // value={state.deadline.$d}
+          />
+          
+          <Button type="submit" variant="contained" endIcon={<ArrowRightIcon />}>
+            Submit{" "}
+          </Button>
+        </Box>
 
-                </div>
-                <input type="submit" value="Submit" />
-                {error && <div className='error'>{error}</div>}
-            </form>
-        </div>
-    );
+        {state.error && <div className="error">{state.error}</div>}
+      </form>
+    </div>
+    </LocalizationProvider>
+  );
 };
 
 export default TodoForm;
